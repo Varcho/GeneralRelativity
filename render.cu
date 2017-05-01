@@ -38,7 +38,14 @@ const double MAX_ITERS = 350; /* Number of iterations that rays are traced backw
                               inspection of a couple of renders. */
 const int WIDTH = 5*256;
 const int HEIGHT = 5*128;
+
+__device__ const double a = 50;
+__device__ const double M = 150;
+__device__ const double RHO = 200;
+
+
 bool RECORD; // whether or not the intermediate values of th raytraced paths should be recorded
+
 
 GLuint vbo;
 void *d_vbo_buffer = NULL;
@@ -60,9 +67,6 @@ union Colour  // 4 bytes = 4 chars = 1 float
 };
 
 __device__ double r(const double l) {
-  const double a = 50;
-  const double M = 150;
-  const double RHO = 200;
   if (abs(l) > a) {
     double x = 2*(abs(l)-a)/(PI*M);
     return RHO+M*(x*atan(x)-.5*log(1+x*x));
@@ -71,7 +75,7 @@ __device__ double r(const double l) {
 }
 
 __device__ double drdl(const double l) {
-  const double M = 150;
+  // const double M = 150;
   return (abs(l)/l) * pow(abs(1-2*M/r(l)),0.5);
 }
 
