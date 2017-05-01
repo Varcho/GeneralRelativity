@@ -20,6 +20,7 @@
 #include <GLUT/glut.h>
 #include <math.h>
 #include <png.hpp>
+#include <boost/program_options.hpp>
 #include "/usr/local/cuda/include/cuda.h"
 #include "/usr/local/cuda/include/math_functions.h"
 #include "/usr/local/cuda/include/vector_types.h"
@@ -32,11 +33,12 @@
 #include "/usr/local/cuda/include/curand_kernel.h"
 
 const double PI = 3.1415926;
-const double MAX_ITERS = 50; /* Number of iterations that rays are traced backwards
+const double MAX_ITERS = 350; /* Number of iterations that rays are traced backwards
                               in time. This number was chosen after visual 
                               inspection of a couple of renders. */
-const int WIDTH = 1*256;
-const int HEIGHT = 1*128;
+const int WIDTH = 5*256;
+const int HEIGHT = 5*128;
+bool RECORD; // whether or not the intermediate values of th raytraced paths should be recorded
 
 GLuint vbo;
 void *d_vbo_buffer = NULL;
@@ -599,6 +601,13 @@ void drawLoop(int iter) {
 
   // Continue drawing if less than the max iterations
   if (iter < MAX_ITERS) {
+    if (RECORD) {
+      char buff[10];
+      snprintf(buff, sizeof(buff), "%05d", iter);
+      std::string num = buff;
+      std::string filename = "record/img_" + num + ".png";
+      writeImage(filename);
+    }
     glutTimerFunc(200, drawLoop, iter+1);
   } else {
     writeAndReturn();
@@ -606,15 +615,29 @@ void drawLoop(int iter) {
 }
 
 int main(int argc, char** argv) {
+
+  // parse out the program options specified by the user 
+  namespace po = boost::program_options;
+  po::options_description desc("Allowed Options");
+  desc.add_options()
+    ("record,r", po::bool_switch()->default_value(false), "record intermediate images");
+
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc,argv,desc),vm);
+  po::notify(vm);
+  RECORD = vm.count("record") ? vm["record"].as<bool>() : false;
+  std::cout << "RECORD: " << RECORD << std::endl;
+
+  int NUM_BYTES = WIDTH * HEIGHT  * sizeof(double3);
   std::cout << "Allocating the path accumulation buffer..." << std::endl;
-  cudaMalloc(&position_buffer, WIDTH * HEIGHT * sizeof(double3));
-  cudaMemset(position_buffer, 0, WIDTH * HEIGHT  * sizeof(double3));
+  cudaMalloc(&position_buffer, NUM_BYTES);
+  cudaMemset(position_buffer, 0, NUM_BYTES);
   std::cout << "Allocated position buffer..." << std::endl;
-  cudaMalloc(&momentum_buffer, WIDTH * HEIGHT * sizeof(double3));
-  cudaMemset(momentum_buffer, 0, WIDTH * HEIGHT  * sizeof(double3));
+  cudaMalloc(&momentum_buffer, NUM_BYTES);
+  cudaMemset(momentum_buffer, 0, NUM_BYTES);
   std::cout << "Allocated momentum buffer..." << std::endl;
-  cudaMalloc(&constants_buffer, WIDTH * HEIGHT * sizeof(double3));
-  cudaMemset(constants_buffer, 0, WIDTH * HEIGHT  * sizeof(double3));
+  cudaMalloc(&constants_buffer, NUM_BYTES);
+  cudaMemset(constants_buffer, 0, NUM_BYTES);
   std::cout << "Allocated constants of motion buffer..." << std::endl;
   cudaMalloc(&intersection_buffer, WIDTH * HEIGHT * sizeof(bool));
   cudaMemset(intersection_buffer, false, WIDTH * HEIGHT  * sizeof(bool));

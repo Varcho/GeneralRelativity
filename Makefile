@@ -19,7 +19,7 @@ LIBPNG_CONFIG := libpng-config
 endif
 
 all:
-	$(NVCXX) -o render render.cu -Xlinker -framework,OpenGL,-framework,GLUT  -I$(PREFIX)/include -I$(LIBPNG)/include/libpng16 -I$(PNGPP)/include/png++ -L$(PREFIX)/lib -L$(LIBPNG)/lib -lpng16
+	$(NVCXX) -o render render.cu -Xlinker -framework,OpenGL,-framework,GLUT  -I$(PREFIX)/include -I$(LIBPNG)/include/libpng16 -I$(PNGPP)/include/png++ -L$(PREFIX)/lib -L$(LIBPNG)/lib -lpng16 -lboost_program_options 
 
 clean:
 	rm render
