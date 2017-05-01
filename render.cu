@@ -32,7 +32,7 @@
 #include "/usr/local/cuda/include/curand_kernel.h"
 
 const double PI = 3.1415926;
-const double MAX_ITERS = 20; /* Number of iterations that rays are traced backwards
+const double MAX_ITERS = 50; /* Number of iterations that rays are traced backwards
                               in time. This number was chosen after visual 
                               inspection of a couple of renders. */
 const int WIDTH = 1*256;
@@ -48,6 +48,7 @@ float3 *imgptr;
 double3* position_buffer;
 double3* momentum_buffer;
 double3* constants_buffer;
+bool* intersection_buffer;
 
 // Helper data structure for converting colors into openGL friendly form
 union Colour  // 4 bytes = 4 chars = 1 float
@@ -365,7 +366,7 @@ __device__ void ellis_rkf45(double &l, double &theta, double &phi,
 // }
 
 
-__device__ double floatmod(double x, double n) {
+__host__ __device__ double floatmod(double x, double n) {
   int mult = 0.0;
   int opt = x/(-n)+1.0f;
   if (opt > mult) {
@@ -380,7 +381,7 @@ __device__ double floatmod(double x, double n) {
 /*
   float3 *output: imagebuffer that will display the rendered image
 */
-__global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, double3 *cbuff, 
+__global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, double3 *cbuff, bool *ibuff, 
                               int width, int height) {
   // create a CUDA thread for every pixel in the image buffer
   // and assign it a unique id
@@ -405,7 +406,7 @@ __global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, do
     ---------------------------------------------------------------*/
     // at first hardcode the initial position of the viewer
         lc = 1500.0f,
-    thetac = PI/2.0f+.7;//+.7,
+    thetac = PI/2.0f+.4;//+.7,
       phic = 0.6f+.001;
 
     // initialize ray parameters based on pixel
@@ -435,11 +436,12 @@ __global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, do
       b = constants.x,      B2 = constants.y, timer = constants.z;
   }
 
-  bool intersected = false;
+  bool intersected = ibuff[i];
   ellis_rkf45(lc,thetac,phic,pli,pthetai,pphii,b,B2,intersected);
   pbuff[i] = make_double3(lc,thetac,phic);
   mbuff[i] = make_double3(pli,pthetai,pphii);
   cbuff[i] = make_double3(b,B2,timer+.1);
+  ibuff[i] = intersected;
 
   // modify input so that it can be displayed nicely
   thetac = floatmod(thetac, (double)PI) / ((double)PI);
@@ -461,8 +463,6 @@ __global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, do
   );
   output[i] = make_float3(x, y, fcolour.c);
 }
-
-
 
 
 // class for writing the output image to a file
@@ -490,19 +490,51 @@ private:
   row m_row;
 };
 
+// write an image based on the current contents of 
+// the position and intersection buffers.
+void writeImage(std::string filepath) {
+  // first copy the position device array that lives in the CUDA world
+  // over to an array that we can access on the host device...
+  int NUM_BYTES = WIDTH * HEIGHT * sizeof(double3);
+  double3 *posHostArray= (double3*)malloc(NUM_BYTES);
+  double3 *posDeviceArray = position_buffer;
+  memset(posHostArray,0,NUM_BYTES);
+  cudaMemcpy(posHostArray,posDeviceArray,NUM_BYTES,cudaMemcpyDeviceToHost);
+
+  // ... and then do the same for the intersection array ...
+  NUM_BYTES = WIDTH * HEIGHT * sizeof(bool);
+  bool *intHostArray= (bool*)malloc(NUM_BYTES);
+  bool *intDeviceArray = intersection_buffer;
+  memset(intHostArray,0,NUM_BYTES);
+  cudaMemcpy(intHostArray,intDeviceArray,NUM_BYTES,cudaMemcpyDeviceToHost);
+
+  // write the array as a png image
+  png::image< png::rgb_pixel > image(WIDTH, HEIGHT);
+  for (png::uint_32 y = 0; y < image.get_height(); y++) {
+      for (png::uint_32 x = 0; x < image.get_width(); x++) {
+          int i = (HEIGHT - y - 1)*WIDTH + x; // TODO(bill) move to function
+          double3 position = posHostArray[i];
+          bool intersected = intHostArray[i];
+          double lc = position.x, thetac =  position.y,  phic = position.z;
+          thetac = floatmod(thetac, (double)PI) / ((double)PI);
+          phic = floatmod(phic, (double)2.0f*PI)/ ((double)2*PI);
+
+          float3 colour = make_float3((float)phic, (float)thetac, 0.0);
+          if (intersected) {
+            colour.z = 0.5;
+          } else if (lc < 0.0) {
+            colour.z = 1.0;
+          }
+          image[y][x] = png::rgb_pixel((powf(colour.x, 1.0f) * 255),
+                                       (powf(colour.y, 1.0f) * 255), 
+                                       (powf(colour.z, 1.0f) * 255));
+      }
+  }
+  image.write(filepath);
+}
 
 void writeAndReturn(void) {
-  std::cout << "Writing Array to image" << std::endl;
-  try {
-    size_t const w = (size_t)WIDTH;
-    size_t const h = (size_t)HEIGHT;
-    std::ofstream file("out/new.png", std::ios::binary);
-    pixel_generator generator(w, h);
-    generator.write(file);
-  } catch (std::exception const& error) {
-    std::cerr << "pixel_generator: " << error.what() << std::endl;
-    exit(EXIT_FAILURE);
-  }
+  writeImage("out/new2.png");
   exit(EXIT_SUCCESS);
 }
 
@@ -519,7 +551,11 @@ void display(void) {
   dim3 grid(WIDTH / block.x, HEIGHT / block.y, 1);
 
   // now launch the kernel
-  render_kernel <<< grid, block >>> (imgptr, position_buffer, momentum_buffer, constants_buffer, WIDTH, HEIGHT);
+  render_kernel <<< grid, block >>> (imgptr, position_buffer, 
+                                             momentum_buffer, 
+                                             constants_buffer, 
+                                             intersection_buffer, 
+                                             WIDTH, HEIGHT);
   cudaThreadSynchronize();
   // now unmap the buffer
   cudaGLUnmapBufferObject(vbo);
@@ -573,12 +609,15 @@ int main(int argc, char** argv) {
   std::cout << "Allocating the path accumulation buffer..." << std::endl;
   cudaMalloc(&position_buffer, WIDTH * HEIGHT * sizeof(double3));
   cudaMemset(position_buffer, 0, WIDTH * HEIGHT  * sizeof(double3));
-   std::cout << "Allocated position buffer..." << std::endl;
+  std::cout << "Allocated position buffer..." << std::endl;
   cudaMalloc(&momentum_buffer, WIDTH * HEIGHT * sizeof(double3));
   cudaMemset(momentum_buffer, 0, WIDTH * HEIGHT  * sizeof(double3));
-   std::cout << "Allocated momentum buffer..." << std::endl;
+  std::cout << "Allocated momentum buffer..." << std::endl;
   cudaMalloc(&constants_buffer, WIDTH * HEIGHT * sizeof(double3));
   cudaMemset(constants_buffer, 0, WIDTH * HEIGHT  * sizeof(double3));
+  std::cout << "Allocated constants of motion buffer..." << std::endl;
+  cudaMalloc(&intersection_buffer, WIDTH * HEIGHT * sizeof(bool));
+  cudaMemset(intersection_buffer, false, WIDTH * HEIGHT  * sizeof(bool));
   std::cout << "Finished allocation." << std::endl;
 
   // init glut for OpenGL viewport
