@@ -14,27 +14,29 @@
 */
 
 #include <iostream>
-#include <math.h>
+#include <ostream>
 #include <string>
 #include <vector>
+#include <GLUT/glut.h>
+#include <math.h>
+#include <png.hpp>
 #include "/usr/local/cuda/include/cuda.h"
 #include "/usr/local/cuda/include/math_functions.h"
 #include "/usr/local/cuda/include/vector_types.h"
 #include "/usr/local/cuda/include/vector_functions.h"
 #include "/usr/local/cuda/include/device_launch_parameters.h"
 #include "cutil_math.h"
-#include <GLUT/glut.h>
 #include "/usr/local/cuda/include/cuda_runtime.h"
 #include "/usr/local/cuda/include/cuda_gl_interop.h"
 #include "/usr/local/cuda/include/curand.h"
 #include "/usr/local/cuda/include/curand_kernel.h"
 
 const double PI = 3.1415926;
-const double MAX_ITERS = 10; /* Number of iterations that rays are traced backwards
+const double MAX_ITERS = 20; /* Number of iterations that rays are traced backwards
                               in time. This number was chosen after visual 
                               inspection of a couple of renders. */
-int WIDTH = 4*256;
-int HEIGHT = 4*128;
+const int WIDTH = 1*256;
+const int HEIGHT = 1*128;
 
 GLuint vbo;
 void *d_vbo_buffer = NULL;
@@ -444,8 +446,11 @@ __global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, do
   phic = floatmod(phic, (double)2.0f*PI)/ ((double)2*PI);
 
   colour = make_float3((float)phic, (float)thetac, 0.0);
-  if (lc < 0.0 || intersected) {
+  if (lc < 0.0) {
     colour = make_float3((float)phic, (float)thetac, 1.0);
+  }
+  if (intersected) {
+    colour = make_float3((float)phic, (float)thetac, 0.5);
   }
 
   fcolour.components = make_uchar4(
@@ -457,9 +462,48 @@ __global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, do
   output[i] = make_float3(x, y, fcolour.c);
 }
 
+
+
+
+// class for writing the output image to a file
+class pixel_generator : public png::generator<png::gray_pixel_1, pixel_generator> {
+public:
+  pixel_generator(size_t width, size_t height)
+      : png::generator< png::gray_pixel_1, pixel_generator >(width, height), m_row(width) {
+    for (size_t i = 0; i < m_row.size(); ++i) {
+      m_row[i] = i > m_row.size() / 2 ? 1 : 0;
+    }
+  }
+
+  png::byte* get_next_row(size_t /*pos*/) {
+    size_t i = std::rand() % m_row.size();
+    size_t j = std::rand() % m_row.size();
+    png::gray_pixel_1 t = m_row[i];
+    m_row[i] = m_row[j];
+    m_row[j] = t;
+    return reinterpret_cast< png::byte* >(row_traits::get_data(m_row));
+  }
+
+private:
+  typedef png::packed_pixel_row< png::gray_pixel_1 > row;
+  typedef png::row_traits< row > row_traits;
+  row m_row;
+};
+
+
 void writeAndReturn(void) {
   std::cout << "Writing Array to image" << std::endl;
-  exit(1);
+  try {
+    size_t const w = (size_t)WIDTH;
+    size_t const h = (size_t)HEIGHT;
+    std::ofstream file("out/new.png", std::ios::binary);
+    pixel_generator generator(w, h);
+    generator.write(file);
+  } catch (std::exception const& error) {
+    std::cerr << "pixel_generator: " << error.what() << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  exit(EXIT_SUCCESS);
 }
 
 void display(void) {
@@ -503,7 +547,21 @@ void createVBO(GLuint* vbo) {
 
 void drawLoop(int iter) {
   glutPostRedisplay();
-  std::cout << "Draw iter: " << iter << std::endl;
+
+  // draw the progress bar based on the current iteration
+  float progress = iter / (float) MAX_ITERS;
+  int barWidth = 70;
+  std::cout << "[";
+  int pos = barWidth * progress;
+  for (int i = 0; i < barWidth; ++i) {
+      if (i < pos) std::cout << "=";
+      else if (i == pos) std::cout << ">";
+      else std::cout << " ";
+  }
+  std::cout << "] " << int(progress * 100.0) << " %\r";
+  std::cout.flush();
+
+  // Continue drawing if less than the max iterations
   if (iter < MAX_ITERS) {
     glutTimerFunc(200, drawLoop, iter+1);
   } else {
