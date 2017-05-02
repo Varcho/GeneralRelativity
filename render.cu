@@ -33,19 +33,22 @@
 #include "/usr/local/cuda/include/curand_kernel.h"
 
 const double PI = 3.1415926;
-const double MAX_ITERS = 350; /* Number of iterations that rays are traced backwards
+const double MAX_ITERS = 150; /* Number of iterations that rays are traced backwards
                               in time. This number was chosen after visual 
                               inspection of a couple of renders. */
-const int WIDTH = 5*256;
-const int HEIGHT = 5*128;
+const int WIDTH = 1*256;
+const int HEIGHT = 1*128;
 
 __device__ const double a = 50;
 __device__ const double M = 150;
 __device__ const double RHO = 200;
+__device__ double L_INIT;     // Define the initial position of the observer
+__device__ double THETA_INIT;
+__device__ double PHI_INIT;
 
-
-bool RECORD; // whether or not the intermediate values of th raytraced paths should be recorded
-
+bool SAVE_IMG; // whether or not the final image should be saved in the out/ directory
+bool RECORD_INTERIM; // whether or not the intermediate values of th raytraced paths should be recorded
+int SAVE_ID; // id for saving the img (useful for image sequences)
 
 GLuint vbo;
 void *d_vbo_buffer = NULL;
@@ -58,13 +61,6 @@ double3* position_buffer;
 double3* momentum_buffer;
 double3* constants_buffer;
 bool* intersection_buffer;
-
-// Helper data structure for converting colors into openGL friendly form
-union Colour  // 4 bytes = 4 chars = 1 float
-{
-  float c;
-  uchar4 components;
-};
 
 __device__ double r(const double l) {
   if (abs(l) > a) {
@@ -384,6 +380,13 @@ __host__ __device__ double floatmod(double x, double n) {
   return x;
 }
 
+// Helper data structure for converting colors into openGL friendly form
+union Colour  // 4 bytes = 4 chars = 1 float
+{
+  float c;
+  uchar4 components;
+};
+
 /*
   float3 *output: imagebuffer that will display the rendered image
 */
@@ -411,9 +414,9 @@ __global__ void render_kernel(float3 *output, double3 *pbuff, double3 *mbuff, do
      Do the necessary setup for the light path on initialization.
     ---------------------------------------------------------------*/
     // at first hardcode the initial position of the viewer
-        lc = 1500.0f,
-    thetac = PI/2.0f+.4;//+.7,
-      phic = 0.6f+.001;
+        lc = L_INIT;
+    thetac = THETA_INIT;
+      phic = PHI_INIT;
 
     // initialize ray parameters based on pixel
     // float thetacs = (PI*(y)) / ((float) height);
@@ -540,7 +543,13 @@ void writeImage(std::string filepath) {
 }
 
 void writeAndReturn(void) {
-  writeImage("out/new2.png");
+  if (SAVE_IMG) {
+    char buff[10];
+    snprintf(buff, sizeof(buff), "%05d", SAVE_ID);
+    std::string num = buff;
+    std::string filename = "out/outimg_" + num + ".png";
+    writeImage(filename);
+  }
   exit(EXIT_SUCCESS);
 }
 
@@ -605,7 +614,7 @@ void drawLoop(int iter) {
 
   // Continue drawing if less than the max iterations
   if (iter < MAX_ITERS) {
-    if (RECORD) {
+    if (RECORD_INTERIM) {
       char buff[10];
       snprintf(buff, sizeof(buff), "%05d", iter);
       std::string num = buff;
@@ -624,28 +633,43 @@ int main(int argc, char** argv) {
   namespace po = boost::program_options;
   po::options_description desc("Allowed Options");
   desc.add_options()
-    ("record,r", po::bool_switch()->default_value(false), "record intermediate images");
+    ("save,s", po::bool_switch()->default_value(false), "save the final image")
+    ("record,r", po::bool_switch()->default_value(false), "record intermediate images")
+    ("num,n", po::value<int>()->default_value(0), "temporal id of the image to be saved")
+    ("li,l", po::value<double>()->default_value(1500.0), "radius of FIDO")
+    ("thetai,t", po::value<double>()->default_value(PI/2.0f), "angle from the pole of FIDO")
+    ("phii,p", po::value<double>()->default_value(0.6f), "angle around pole of FIDO");
+  // TODO: options for height and width of the final image
+  //       options for raytrace time
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc,argv,desc),vm);
   po::notify(vm);
-  RECORD = vm.count("record") ? vm["record"].as<bool>() : false;
-  std::cout << "RECORD: " << RECORD << std::endl;
+  SAVE_IMG = vm.count("save") ? vm["save"].as<bool>() : false;
+  RECORD_INTERIM = vm.count("record") ? vm["record"].as<bool>() : false;
+  SAVE_ID =  vm["num"].as<int>();
 
+  // set the initial position of the observer based on the 
+  // command line arguments
+  double L_INIT_HOST     = vm["li"].as<double>();
+  double THETA_INIT_HOST = vm["thetai"].as<double>() +.4;
+  double PHI_INIT_HOST   = vm["phii"].as<double>();
+  cudaMemcpyToSymbol(L_INIT, &L_INIT_HOST, sizeof(double));
+  cudaMemcpyToSymbol(THETA_INIT, &THETA_INIT_HOST, sizeof(double));
+  cudaMemcpyToSymbol(PHI_INIT, &PHI_INIT_HOST, sizeof(double));
+
+  // initialize and allocate the buffers....
   int NUM_BYTES = WIDTH * HEIGHT  * sizeof(double3);
-  std::cout << "Allocating the path accumulation buffer..." << std::endl;
+  std::cout << "Allocating buffers..." << std::endl;
   cudaMalloc(&position_buffer, NUM_BYTES);
-  cudaMemset(position_buffer, 0, NUM_BYTES);
-  std::cout << "Allocated position buffer..." << std::endl;
   cudaMalloc(&momentum_buffer, NUM_BYTES);
-  cudaMemset(momentum_buffer, 0, NUM_BYTES);
-  std::cout << "Allocated momentum buffer..." << std::endl;
   cudaMalloc(&constants_buffer, NUM_BYTES);
-  cudaMemset(constants_buffer, 0, NUM_BYTES);
-  std::cout << "Allocated constants of motion buffer..." << std::endl;
   cudaMalloc(&intersection_buffer, WIDTH * HEIGHT * sizeof(bool));
+  std::cout << "Filling buffers..." << std::endl;
+  cudaMemset(position_buffer, 0, NUM_BYTES);
+  cudaMemset(momentum_buffer, 0, NUM_BYTES);
+  cudaMemset(constants_buffer, 0, NUM_BYTES);
   cudaMemset(intersection_buffer, false, WIDTH * HEIGHT  * sizeof(bool));
-  std::cout << "Finished allocation." << std::endl;
 
   // init glut for OpenGL viewport
   glutInit(&argc, argv);
