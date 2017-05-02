@@ -33,11 +33,11 @@
 #include "/usr/local/cuda/include/curand_kernel.h"
 
 const double PI = 3.1415926;
-const double MAX_ITERS = 150; /* Number of iterations that rays are traced backwards
+const double MAX_ITERS = 250; /* Number of iterations that rays are traced backwards
                               in time. This number was chosen after visual 
                               inspection of a couple of renders. */
-const int WIDTH = 1*256;
-const int HEIGHT = 1*128;
+const int WIDTH = 4*256;
+const int HEIGHT = 4*128;
 
 __device__ const double a = 50;
 __device__ const double M = 150;
@@ -272,100 +272,100 @@ __device__ void ellis_rkf45(double &l, double &theta, double &phi,
   }
 }
 
-// /*
-//  Explicit implementation of Runge-Kutta 4th order
-//  integration. It is a generalized version of the 
-//  method that words for multiple dependent variables
-//  which are dependent and proper time.
-// */
-// __device__ void ellis_rk4(float &l, float &theta, float &phi, 
-//                           float &pl, float &ptheta, float &pphi, 
-//                           float b, float B2) {
-//   /* This particular method uses the following integration tableau
-//      .0|
-//      .5| .5
-//      .5| .0  .5
-//     1.0| .0  .0  1
-//     ---------------
-//          .16 .33 .33 .16 */  
+/*
+ Explicit implementation of Runge-Kutta 4th order
+ integration. It is a generalized version of the 
+ method that words for multiple dependent variables
+ which are dependent and proper time.
+*/
+__device__ void ellis_rk4(double &l, double &theta, double &phi, 
+                          double &pl, double &ptheta, double &pphi, 
+                          double b, double B2) {
+  /* This particular method uses the following integration tableau
+     .0|
+     .5| .5
+     .5| .0  .5
+    1.0| .0  .0  1
+    ---------------
+         .16 .33 .33 .16 */  
 
-//   float h = -10.3; // h = 'dt' aka timestep
-//   for (int k = 0; k < 5; k++) {
-//     /*
-//       ai's correspond to l
-//       bi's correspond to theta
-//       ci's correspond to phi
-//       di's correspond to pl
-//       ei's correspond to ptheta
-//     */
-//     // compute the values for the 0th approximation
-//     // for all variables.. 
-//     float a0 = h*dldt(pl);
-//     float b0 = h*dthetadt(l,ptheta);
-//     float c0 = h*dphidt(l,theta,b);
-//     float d0 = h*dpldt(l,B2);
-//     float e0 = h*dpthetadt(l,theta,b);
+  double h = -10.3; // h = 'dt' aka timestep
+  for (double k = 0; k < 5; k++) {
+    /*
+      ai's correspond to l
+      bi's correspond to theta
+      ci's correspond to phi
+      di's correspond to pl
+      ei's correspond to ptheta
+    */
+    // compute the values for the 0th approximation
+    // for all variables.. 
+    double a0 = h*dldt(pl);
+    double b0 = h*dthetadt(l,ptheta);
+    double c0 = h*dphidt(l,theta,b);
+    double d0 = h*dpldt(l,B2);
+    double e0 = h*dpthetadt(l,theta,b);
 
-//     // .. and then the 1st ... 
-//     float a1 = h*dldt(pl+.5*d0);
-//     float b1 = h*dthetadt(l+.5*a0,ptheta+.5*e0);
-//     float c1 = h*dphidt(l+.5*a0,theta+.5*b0,b);
-//     float d1 = h*dpldt(l+.5*a0,B2);
-//     float e1 = h*dpthetadt(l+.5*a0,theta+.5*b0,b);
+    // .. and then the 1st ... 
+    double a1 = h*dldt(pl+.5*d0);
+    double b1 = h*dthetadt(l+.5*a0,ptheta+.5*e0);
+    double c1 = h*dphidt(l+.5*a0,theta+.5*b0,b);
+    double d1 = h*dpldt(l+.5*a0,B2);
+    double e1 = h*dpthetadt(l+.5*a0,theta+.5*b0,b);
     
-//     // ... and 2nd ...
-//     float a2 = h*dldt(pl+.5*d1);
-//     float b2 = h*dthetadt(l+.5*a1,ptheta+.5*e1);
-//     float c2 = h*dphidt(l+.5*a1,theta+.5*b1,b);
-//     float d2 = h*dpldt(l+.5*a1,B2);
-//     float e2 = h*dpthetadt(l+.5*a1,theta+.5*b1,b);
+    // ... and 2nd ...
+    double a2 = h*dldt(pl+.5*d1);
+    double b2 = h*dthetadt(l+.5*a1,ptheta+.5*e1);
+    double c2 = h*dphidt(l+.5*a1,theta+.5*b1,b);
+    double d2 = h*dpldt(l+.5*a1,B2);
+    double e2 = h*dpthetadt(l+.5*a1,theta+.5*b1,b);
     
-//     // ... and finally the 3rd
-//     float a3 = h*dldt(pl+d2);
-//     float b3 = h*dthetadt(l+a2,ptheta+e2);
-//     float c3 = h*dphidt(l+a2,theta+b2,b);
-//     float d3 = h*dpldt(l+a2,B2);
-//     float e3 = h*dpthetadt(l+a2,theta+b2,b);
+    // ... and finally the 3rd
+    double a3 = h*dldt(pl+d2);
+    double b3 = h*dthetadt(l+a2,ptheta+e2);
+    double c3 = h*dphidt(l+a2,theta+b2,b);
+    double d3 = h*dpldt(l+a2,B2);
+    double e3 = h*dpthetadt(l+a2,theta+b2,b);
 
-//     // Then use these values to compute the derivative approximation
-//     // used in the backwards time step
-//     l      = l+(a0+2*a1+2*a2+a3)/6.0;
-//     theta  = theta+(b0+2*b1+2*b2+b3)/6.0;
-//     phi    = phi+(c0+2*c1+2*c2+c3)/6.0;
-//     pl     = pl+(d0+2*d1+2*d2+d3)/6.0;
-//     ptheta = ptheta+(e0+2*e1+2*e2+e3)/6.0;
-//   } 
-// }
+    // Then use these values to compute the derivative approximation
+    // used in the backwards time step
+    l      = l+(a0+2*a1+2*a2+a3)/6.0;
+    theta  = theta+(b0+2*b1+2*b2+b3)/6.0;
+    phi    = phi+(c0+2*c1+2*c2+c3)/6.0;
+    pl     = pl+(d0+2*d1+2*d2+d3)/6.0;
+    ptheta = ptheta+(e0+2*e1+2*e2+e3)/6.0;
+  } 
+}
 
-// __device__ void ellis_euler(float &l, float &theta, float &phi, 
-//                             float &pl, float &ptheta, float &pphi, 
-//                             float b, float B2) {
-//   float h = -5.3; // h = 'dt' aka timestep
-//   for (int k = 0; k < 10; k++) {
-//     /*
-//       ai's correspond to l
-//       bi's correspond to theta
-//       ci's correspond to phi
-//       di's correspond to pl
-//       ei's correspond to ptheta
-//     */
-//     // compute the values for the 0th approximation
-//     // for all variables.. 
-//     float a0 = h*dldt(pl);
-//     float b0 = h*dthetadt(l,ptheta);
-//     float c0 = h*dphidt(l,theta,b);
-//     float d0 = h*dpldt(l,B2);
-//     float e0 = h*dpthetadt(l,theta,b);
+__device__ void ellis_euler(double &l, double &theta, double &phi, 
+                            double &pl, double &ptheta, double &pphi, 
+                            double b, double B2) {
+  double h = -10.3; // h = 'dt' aka timestep
+  for (int k = 0; k < 10; k++) {
+    /*
+      ai's correspond to l
+      bi's correspond to theta
+      ci's correspond to phi
+      di's correspond to pl
+      ei's correspond to ptheta
+    */
+    // compute the values for the 0th approximation
+    // for all variables.. 
+    double a0 = h*dldt(pl);
+    double b0 = h*dthetadt(l,ptheta);
+    double c0 = h*dphidt(l,theta,b);
+    double d0 = h*dpldt(l,B2);
+    double e0 = h*dpthetadt(l,theta,b);
 
-//     // Then use these values to compute the derivative approximation
-//     // used in the backwards time step
-//     l      = l+a0;
-//     theta  = theta+b0;
-//     phi    = phi+c0;
-//     pl     = pl+d0;
-//     ptheta = ptheta+e0;
-//   } 
-// }
+    // Then use these values to compute the derivative approximation
+    // used in the backwards time step
+    l      = l+a0;
+    theta  = theta+b0;
+    phi    = phi+c0;
+    pl     = pl+d0;
+    ptheta = ptheta+e0;
+  } 
+}
 
 
 __host__ __device__ double floatmod(double x, double n) {
