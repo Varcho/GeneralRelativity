@@ -1,0 +1,14 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Specifying the Geometry}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Wormhole Metric}{section.2}% 3
+\BOOKMARK [3][-]{subsubsection.2.1.1}{Ellis Metric}{subsection.2.1}% 4
+\BOOKMARK [2][-]{subsection.2.2}{Accretion Disk}{section.2}% 5
+\BOOKMARK [1][-]{section.3}{Mathematization of Light Rays}{}% 6
+\BOOKMARK [1][-]{section.4}{Computing the Light Paths}{}% 7
+\BOOKMARK [2][-]{subsection.4.1}{Numerical Integration}{section.4}% 8
+\BOOKMARK [3][-]{subsubsection.4.1.1}{Euler's Method}{subsection.4.1}% 9
+\BOOKMARK [3][-]{subsubsection.4.1.2}{Runge-Kutta 4th Order Method}{subsection.4.1}% 10
+\BOOKMARK [3][-]{subsubsection.4.1.3}{Runge-Kutta-Fehlberg Method}{subsection.4.1}% 11
+\BOOKMARK [2][-]{subsection.4.2}{CUDA}{section.4}% 12
+\BOOKMARK [1][-]{section.5}{Results}{}% 13
+\BOOKMARK [1][-]{section.6}{Conclusion}{}% 14
