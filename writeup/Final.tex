@@ -49,27 +49,48 @@
 \maketitle
 
 \section{Introduction}
-	In 2014, director Christopher Nolan brought his newest blockbuster, Interstellar, to the big screen. Just like Nolan's previous movies, Interstellar featured an engaging plot, dynamic characters, and a sense of familiarity, even in the strange environments it takes place in. However this sci-fi flick was unique from its predecessors, particularly where it matters most; the details. Interstellar, was the first ever blockbuster to use the principles and physics of Einstein's General Relativity, as both a plot device, and as an influence for the visual imagery. In fact, Nolan and his visual effects team (an English studio named Double Negative), worked together with physicist Kip Thorne to produce the first every visually realistic images of black holes that Hollywood has ever seen. \par
-	In this project I attempt to understand the team's work, and describe their solutions in an interesting manner. Additionally, because the physics described seemed 'relatively' straightforward, I also implemented the solution in C++ and CUDA for part of my project as well. 
+	In 2014, director Christopher Nolan brought his newest blockbuster, Interstellar, to the big screen. Just like Nolan's previous movies, Interstellar featured an engaging plot, dynamic characters, and a sense of familiarity, even in the strange environments in which it takes place. However this sci-fi flick was unique from its predecessors, particularly where it matters most; the details. Interstellar, was the first ever blockbuster to use the principles and physics of Einstein's General Relativity, as both a plot device, and as an influence for the visual imagery. In fact, Nolan and his visual effects team (the British production studio Double Negative), worked together with physicist Kip Thorne to produce the first every visually realistic images of black holes that Hollywood has ever seen. \par
+	In this project I attempt to understand the team's work, and describe their solutions in an pedagogical and engaging manner. Additionally, because the physics described seemed 'relatively' straightforward, I also implemented the solution in C++ and CUDA for part of my project as well. 
 \section{Specifying the Geometry}
-In the movie, two gravitational phenemenon were taken special care in rendering; both a wormhole, and a rotating black hole. The physics for generating light rays for both is quite similar, and (unsurprisingly) high intertwined with the metric. Because of this similarity I chose to combine both of these phenomenon into something new that I could render for this project: a wormhole with an accretion disk.
+In the movie, two gravitational phenomenon were taken special care in rendering; a wormhole, and a rotating black hole. The physics for generating light rays for both is quite similar, and (unsurprisingly) highly intertwined with the metric. Because of this similarity I chose to combine both of these phenomenon into something new that I could render for this project: a wormhole with an accretion disk.
 \subsection{Wormhole Metric}
+To find a visually appealing wormhole metric, I will briefly discuss how Kip Thorne and the team of engineers at Double Negative started with the Ellis Metric, and then modified it to fit their specific needs. This modified wormhole metric, will then be what I take forward in my latter implementation.
 \subsubsection{Ellis Metric}
-show grapher picture
+The Ellis wormhole metric was introduced in 1973 by Homer Ellis, and has the following form 
+\begin{align*}
+ds^2 &= -dt^2+dl^2+r^2(d\theta^2+\sin^2d\phi^2)\\
+r(l) &= \sqrt{\rho^2+l^2}
+\end{align*}
+(where $\rho$ is some constant corresponding to the radius of the wormhole). This simple metric is analytically nice, and has an explicitly computable embedding diagram, which can be seen below. However, because there are not many parameters on this model to 'tune' it was hard to have visual flexibility in the final output image (something required by director Chris Nolan). This dilemma led Kip Thorne to slightly modify the metric so that it had multiple parameters, which could be dialed in. Justification for this metric, as well as its parameters can be found in \cite{viz}. The modified metric now takes the following function of $r$...
+\begin{align*}
+r(l)= 
+\begin{cases}
+   \rho, & \text{if } \lvert l \lvert \leq a\\
+   \rho+\mathbf{M}(x \arctan x-\frac{1}{2}\ln(1+x^2)), &\lvert l \lvert > a
+\end{cases}
+\end{align*}
+where 
+\begin{align*}
+x = \frac{2(\lvert l \lvert - a)}{\pi\mathbf{M}}
+\end{align*}
+and $a$ is the length of the throat of the wormhole, $\rho$ is the throat radius, and $\mathbf{M}$ is the 'mass'. In order to find an appealing result, I had to tweak these parameters, and eventually settled on the values of $a=50$, $\mathbf{M}=150$, and $\rho=200$, which were used in all of the images rendered for this project.
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=.9\linewidth]{ant2}
   \caption{Embedding diagram for the Ellis Wormhole, and light-path geodesics. These light paths are what the 'ant' on this surface sees. In particular notice how near the throat of the wormhole, many of the light paths are highly curved, resulting in a warping of the image the ant sees.}
   \label{fig:mine}
 \end{figure}
+
 \subsection{Accretion Disk}
-Finally, to create a unique aspect for this project I decided to add an accretion disk to the wormhole metric. To do this I followed a similar procedure to the one the author's used in the papers, which checked whether or not a light ray intersected the disk at any point, and if so rendered it. Furthermore, the warping of this disk in spacetime, creates some interesting and novel visual effects which are fun to realize.
+Finally, to create a unique aspect for this project I decided to add an accretion disk to the wormhole metric. To do this I followed a similar procedure to the one the author's used in the paper concerning the Kerr metric \cite{spin}. To add this effect at computation time, at every timestep I added a check which verified whether or not a light ray intersected the disk at any point, and if so rendered it. Furthermore, the warping of this disk in spacetime, created some interesting and novel visual effects which were fun to see.
 \section{Mathematization of Light Rays}
-Most famously, the paths that light takes in curved spacetime is a geodesic, and thus a solution to the 'geodesic equation', namely
+Most famously, the paths that light takes in curved spacetime are geodesics, and thus a solution to the 'geodesic equation'
 \begin{align*}
 \frac{d^{2}x}{d\zeta^2} + \tensor{\Gamma}{^\alpha_\mu_\nu} \frac{dx^{\mu}}{d\zeta}\frac{dx^{\nu}}{d\zeta}= 0
 \end{align*}
-Unfortunately, as the author's note, this equation does not play very nicely with numerical work, and thus another formulation is required. This problem is avoided via Hamilton-Jacobi Theory. By defining a 'super-Hamiltonian' $\mathbf{H}$, which is dependent on a particles' position, momentum, and the metric, we can use the theory to set up a system of ODE's describing the motion of the path. First we start by defining
+where $\zeta$ parameterizes the curve taken by the particle.
+Unfortunately, as the authors note, this equation does not play very nicely with numerical work, and thus another formulation is required. This problem is avoided via Hamilton-Jacobi Theory. By defining a 'super-Hamiltonian' $\mathbf{H}$, which is dependent on a particles' position, momentum, and the metric, we can use the theory to set up a system of ODE's describing the motion of the path. First we start by defining
 \begin{align*}
 \mathbf{H}(x^{\alpha}, p_{\beta}) = \frac{1}{2} \tensor{g}{^\mu^\nu}(x^{\alpha})p_{\mu}p_{\nu}
 \end{align*}
@@ -78,8 +99,8 @@ Then we can derive the following equations, describing the particles path...
 \frac{dx^{\alpha}}{d\zeta} &= \frac{d\mathbf{H}}{dp_{\alpha}} = \tensor{g}{^\alpha^\nu}p_{\nu}\\
 \frac{dp_{\alpha}}{d\zeta} &= -\frac{d\mathbf{H}}{dx^{\alpha}} = -\frac{1}{2}\frac{\tensor{g}{^\mu^\nu}}{dx^{\alpha}}   p_{\mu}p_{\nu}
 \end{align*}
-where $\zeta$ is parameterizes the curve taken by the particle.\par
-Now, using the general wormhole metric provided by the interstellar team above, we can conclude that the super-Hamiltonian takes the form
+\par
+And now, using the general wormhole metric provided by the interstellar team above, we can conclude that the super-Hamiltonian takes the form
 \begin{align*}
 \mathbf{H}=\frac{1}{2}(-p_{t}^2+p_{l}^2+\frac{p_{\theta}^{2}}{r(l)^2}+\frac{p_{\phi}^{2}}{r(l)^2\sin^2\theta})
 \end{align*}
@@ -89,11 +110,10 @@ Next, the paper provides details on the symmetries of this super-Hamiltonian, an
 \frac{d\theta}{dt} &= \frac{p_\theta}{r^2}\\
 \frac{d\phi}{dt} &= \frac{b}{r^2\sin^2\theta}\\
 \frac{dp_l}{dt} &= B^{2}\frac{\frac{dr}{dl}}{r^3}\\
-\frac{dp_\theta}{dt} &= \frac{b^2\cos\theta}{r^2\sin^3\theta}\\
+\frac{dp_\theta}{dt} &= \frac{b^2\cos\theta}{r^2\sin^3\theta}
 \end{align*}
-
 \section{Computing the Light Paths}
-Now that we have mathematized the movement of light through time, we now need some sort of method that will enable us to integrate these equations. Unfortunately the complexity of these equations, finding exact analytical solutions can be rather difficult. To alleviate this strain we can use (as the authors suggest) numerical integration.
+Now that we have mathematized the movement of light through time, we now need some sort of method that will enable us to integrate these equations. Unfortunately, because of the complexity of these equations, finding exact analytical solutions can be rather difficult. To alleviate this strain we can use (as the authors suggest) numerical integration.
 \subsection{Numerical Integration}
 \subsubsection{Euler's Method}
 As you may know, there are no shortage of numerical techniques for solving systems of ODEs, but because I wanted to implement the code for this project myself, I decided to start with the simplest techniques, and work up from there. The first solution I tried was using Euler's Method. This simple idea tries to predict the next point on a solution trajectory of a differential equation, by modeling it as a linear function of the position of the point and the derivative at the location. Specifically, for some vector field $f(x,y)$, we can approximate the next y-value $y_{n+1}$, by specifying a step-size $\Delta$ and then evaluating
@@ -101,7 +121,7 @@ As you may know, there are no shortage of numerical techniques for solving syste
 &\boxed{y_{n+1}=y_{n}+\Delta f(x_n,y_n)}\\
 &x_{n+1} = x_n + \Delta
 \end{align*}
-Although the above is in a nice form, it may not be immediately intuitive to how this method can be applied to our equations above. Therefore, I have explicitly described the translated case for our scenario below.
+Although the above is in a nice form, it may not be immediately intuitive to how this method can be applied to our equations above. Therefore, I have explicitly described the translated case for our scenario below for the five non-constant parameters along the particles path.
 \begin{align*}
 l_{n+1}&=l_{n}+\Delta\frac{d l}{d t}\\
 \theta_{n+1}&=\theta_{n}+\Delta\frac{d \theta}{d t}\\
@@ -141,20 +161,22 @@ k_{l,4} &= \frac{d l}{d t}(p_{l,n}+\Delta k_{p_{l},3})\\
 k_{\theta,4} &= \frac{d \theta}{d t}(l_{n}+\Delta k_{l,3},p_{\theta,n}+\Delta k_{p_{\theta},3})\\
 k_{\phi,4} &= \frac{d \phi}{d t}(l_{n}+\Delta k_{l,3},\theta_{n}+\Delta k_{\theta,3},b)\\
 k_{p_{l},4} &= \frac{d p_{l}}{d t}(l_{n}+\Delta k_{l,3}, B^{2})\\
+\end{align*}
+\begin{align*}
 k_{p_{\theta},4} &= \frac{d p_{\theta}}{d t}(l_{n}+\Delta k_{l,3}, \theta_{n} +\Delta k_{\theta,3}, b)\\
-\\
+&\noindent\rule{8cm}{0.4pt}\\
 l_{n+1}&=l_{n}+\frac{\Delta}{6} (k_{l,1}+2k_{l,2}+2k_{l,3}+k_{l,4})\\
 \theta_{n+1}&=\theta_{n}+\frac{\Delta}{6} (k_{\theta,1}+2k_{\theta,2}+2k_{\theta,3}+k_{\theta,4})\\
 \phi_{n+1}&=\phi_{n}+\frac{\Delta}{6} (k_{\phi,1}+2k_{\phi,2}+2k_{\phi,3}+k_{\phi,4})\\
 p_{l,n+1}&=p_{l,n}+\frac{\Delta}{6} (k_{p_{l},1}+2k_{p_{l},2}+2k_{p_{l},3}+k_{p_{l},4})\\
-p_{\theta,n+1}&=p_{\theta,n}+\frac{\Delta}{6} (k_{p_{\theta},1}+2k_{p_{\theta},2}+2k_{p_{\theta},3}+k_{p_{\theta},4})\\
+p_{\theta,n+1}&=p_{\theta,n}+\frac{\Delta}{6} (k_{p_{\theta},1}+2k_{p_{\theta},2}+2k_{p_{\theta},3}+k_{p_{\theta},4})
 \end{align*}
 
-As can be seen from the above set of computations, this method required many more calculations at each time step, thus slowing down the speed of the simulation. However, since the approximations, were more accurate, slightly larger timesteps could be taken, and certain light paths were as susceptible to the numerical instablity that was often seen using Euler's method.
+As can be seen from the above set of computations, this method required many more calculations at each time step, thus slowing down the speed of the simulation. However, since the approximations, were more accurate, slightly larger timesteps could be taken, and certain light paths were less susceptible to the numerical instability that was often seen using Euler's method.
 
 \subsubsection{Runge-Kutta-Fehlberg Method}
-Finally, I want to talk about the last integration method I used; RKF45. This technique, is similar to RK4, but computes both a $5^{th}$ and $6^{th}$ order approximation at each time-step. These two approximations are then compared, and based on their difference the optimal time-step is computed. Although, quite effective, this method is also somewhat numerically verbose, and thus I have decided to remove it from this write up. However the flavor is similar in nature to the previous, and if the reader if interested further, the can inquire my \color{red}\href{https://github.com/Varcho/GeneralRelativity}{code}\color{black}. \par
-In practice, the RKF45 method is very useful, particularly in how it handles it's adaptive time-step. This allowed the program to make much larger steps for light paths, while still remaining numerically intact for most of the really complex paths. This had a measurable impact on the speed and efficiency of the implementation. Unfortunately, though, in the most difficult areas to render, the time-step would often have to be quite small to avoid innacuracies, which could prevent certain portions of the regions from rendering completely.
+Finally, I want to talk about the last integration method I used; RKF45. This technique, is similar to RK4, but computes both a $4^{th}$ and $5^{th}$ order approximation at each time-step. These two approximations are then compared, and based on their difference the optimal time-step is computed. Although, quite effective, this method is also somewhat numerically verbose, and thus I have decided to remove it from this write up. However the flavor is similar in nature to the previous, and if the reader if interested further, the can inquire my \color{red}\href{https://github.com/Varcho/GeneralRelativity}{code}\color{black}. \par
+In practice, the RKF45 method is very useful, particularly in how it handles it's adaptive time-step. This allowed the program to make much larger steps for certain light paths, while still remaining numerically intact for most of the really complex paths. This had a measurable impact on the speed and efficiency of the implementation. Unfortunately, though, in the most difficult areas to render, the time-step would often have to be quite small to avoid innacuracies, which could prevent certain portions of the regions from rendering completely.
 \begin{figure}[H]
 \begin{subfigure}{.333\textwidth}
   \centering
@@ -179,7 +201,7 @@ In practice, the RKF45 method is very useful, particularly in how it handles it'
 \end{figure}
 
 \subsection{CUDA}
-  With modern computers, numerically solving a single light path is not a problem at all, and can be done in a mere fraction of a second. However, in the attempt to render a fully sized image, the computational cost becomes much more noticeably. Specifically, in my implementation, I wished to produce an image of size 1024x512 pixels. Therefore, over 500k light paths would have to be computed. On my laptop this task was quite daunting, and took almost 45 minutes to render. In a pedagogical sense, this time factor was quite limiting, because it because unwieldy to debug images, and explore the parameter space of the wormhole. Additionally, since all of the paths that needed to be computed were not interdependent, I wanted to find a better solution. \par
+  With modern computers, numerically solving a single light path is not a problem at all, and can be done in a mere fraction of a second. However, in the attempt to render a fully sized image, the computational cost becomes much more noticeably. Specifically, in my implementation, I wished to produce an image of size 1024x512 pixels. Therefore, over 500k light paths would have to be computed. On my laptop this task was quite daunting, and took almost 45 minutes to render. In a pedagogical sense, this time factor was quite limiting, because it became unwieldy to debug images, and explore the parameter space of the wormhole. Additionally, since all of the paths that needed to be computed were not interdependent, I wanted to find a better solution. \par
   To overcome this, I decided to modify my code to take advantage of the underlying architecture of my laptop. To do this I decided to write my code as a CUDA kernel. CUDA is a parallel programming interface, designed by NVIDIA, and allowed my code to run on the Graphics card of my computer. This allowed me to compute large groups of paths at the same time massively speeding up my code. By writing the numerical solver as a 'kernel' (or CUDA specific code) I was then able to render the same image in under 8 minutes. \par
 \section{Results}\footnote{If you would like to see more of the images I rendered, just shoot me an email. To keep this project shorter I ommitted most of them.}
   Below are a couple of the images rendered with my implementation of the software. The first image was generated before implementing the code with CUDA (thus forcing the resolution to be lower). The second image however, was able to be rendered by CUDA quite efficiently. 
@@ -198,7 +220,7 @@ In practice, the RKF45 method is very useful, particularly in how it handles it'
 \end{figure}
 
 \section{Conclusion}
- \par As I movie buff myself, I was quite surprised when I first encountered these papers by the Interstellar team. Oftentimes Hollywood leaves a could shoulder to the real science underlying certain movies, particularly when they involve outer space and science fiction. Because of this, these articles were quite refreshing. Having never scene Einstein's theory used as a mechanism for entertainment, I became really excited by the imagination of the authors. In the movie, the general public was given their first glimpse of what a real black hole would look like, shattering any previous misconceptions. \par
+ \par As a movie buff myself, I was quite surprised when I first encountered these papers by the Interstellar team. Oftentimes Hollywood shows a could shoulder to the real science underlying certain movies, particularly when they involve outer space and science fiction. Because of this, these articles were quite refreshing and inspiring. Having never scene Einstein's theory used as a mechanism for entertainment, I became really excited by the imagination of the authors. Also in the movie, the general public was given their first glimpse of what a real black hole would look like, which shattered many of the previous misconceptions and also generated new excitement towards the science. \par
 	Furthermore, by taking on the challenge to implement their ideas in code myself, I truly believe that I was able to get a strong grasp of their method, as well as improve my programming maturity. The computational complexity of this task forced me to embrace new tools (such as CUDA), which I believe will be quite valuable for any numerical work I do in the future. Additionally, I have uploaded all of my code on Github (an online website for sharing source code of software) and it is available \color{red}\href{https://github.com/Varcho/GeneralRelativity}{here}\color{black}.\par
 	Finally, I wanted to conclude with by thanking you for taking the time to teach this two-semester course in General Relativity. To be completely honest, the entire reason I took the course was because I was inspired by Interstellar, and wanted to learn more. I could not have anticipated the variety and intrigue of the mathematical methods used in the description of curved spacetime. As a computer scientists, gravitational phenomenom, will probably not make its way into my every day work, but the mathematical methods, and ways of thinking used in the creation of this theory will definitely be useful. Because of this, I am quite thankful.
 	

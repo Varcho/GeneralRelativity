@@ -1,4 +1,4 @@
-This is LuaTeX, Version beta-0.80.0 (TeX Live 2015) (rev 5238)  (format=lualatex 2015.5.24)  2 MAY 2017 04:42
+This is LuaTeX, Version beta-0.80.0 (TeX Live 2015) (rev 5238)  (format=lualatex 2015.5.24)  2 MAY 2017 05:47
  restricted \write18 enabled.
  file:line:error style messages enabled.
 **Final.tex
@@ -1173,101 +1173,102 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 LaTeX Font Info:    Try loading font information for U+bbold on input line 50.
 
-(/usr/local/texlive/2015/texmf-dist/tex/latex/bbold/Ubbold.fd)
-<ant2.png, id=60, 1178.90437pt x 528.97626pt>
+(/usr/local/texlive/2015/texmf-dist/tex/latex/bbold/Ubbold.fd)(load luc: /usr/lo
+cal/texlive/2015/texmf-var/luatex-cache/generic/fonts/otf/lmroman7-regular.luc)(
+load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generic/fonts/otf/lmrom
+an5-regular.luc)(load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generi
+c/fonts/otf/lmroman7-bold.luc)(load luc: /usr/local/texlive/2015/texmf-var/luate
+x-cache/generic/fonts/otf/lmroman5-bold.luc)
+<ant2.png, id=61, 1178.90437pt x 528.97626pt>
 File: ant2.png Graphic file (type png)
  <use ant2.png>
-Package pdftex.def Info: ant2.png used on input line 61.
+Package pdftex.def Info: ant2.png used on input line 80.
 (pdftex.def)             Requested size: 487.8192pt x 218.88339pt.
  [1
 
-{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}<./ant2.pn
-g>](load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generic/fonts/otf/l
-mroman7-regular.luc)(load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/ge
-neric/fonts/otf/lmroman5-regular.luc)(load luc: /usr/local/texlive/2015/texmf-va
-r/luatex-cache/generic/fonts/otf/lmroman7-bold.luc)(load luc: /usr/local/texlive
-/2015/texmf-var/luatex-cache/generic/fonts/otf/lmroman5-bold.luc) [2]
+{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2<./ant
+2.png>]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 113.
+(hyperref)                removing `math shift' on input line 133.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `superscript' on input line 113.
+(hyperref)                removing `superscript' on input line 133.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 113.
+(hyperref)                removing `math shift' on input line 133.
 
-[3] [4] <euler.png, id=91, 1027.84pt x 513.92pt>
+[3] [4] <euler.png, id=98, 1027.84pt x 513.92pt>
 File: euler.png Graphic file (type png)
  <use euler.png>
-Package pdftex.def Info: euler.png used on input line 161.
+Package pdftex.def Info: euler.png used on input line 183.
 (pdftex.def)             Requested size: 162.44014pt x 81.21729pt.
 (load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generic/fonts/otf/lmro
-man9-regular.luc) <rk4.png, id=92, 1027.84pt x 513.92pt>
+man9-regular.luc) <rk4.png, id=99, 1027.84pt x 513.92pt>
 File: rk4.png Graphic file (type png)
  <use rk4.png>
-Package pdftex.def Info: rk4.png used on input line 167.
+Package pdftex.def Info: rk4.png used on input line 189.
 (pdftex.def)             Requested size: 162.44014pt x 81.21729pt.
 
-<rkf45.png, id=93, 1027.84pt x 513.92pt>
+<rkf45.png, id=100, 1027.84pt x 513.92pt>
 File: rkf45.png Graphic file (type png)
  <use rkf45.png>
-Package pdftex.def Info: rkf45.png used on input line 173.
+Package pdftex.def Info: rkf45.png used on input line 195.
 (pdftex.def)             Requested size: 162.44014pt x 81.21729pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 159--178
+Underfull \hbox (badness 10000) in paragraph at lines 181--200
 [][]$[]$$[]$$[]$
  []
 
 (load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generic/fonts/otf/lmro
 man8-bold.luc)(load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generic/
-fonts/otf/lmroman6-bold.luc) <11.png, id=95, 803.0pt x 401.5pt>
+fonts/otf/lmroman6-bold.luc) <11.png, id=102, 803.0pt x 401.5pt>
 File: 11.png Graphic file (type png)
  <use 11.png>
-Package pdftex.def Info: 11.png used on input line 188.
+Package pdftex.def Info: 11.png used on input line 210.
 (pdftex.def)             Requested size: 487.8192pt x 243.91603pt.
 
 [5<./euler.png><./rk4.png><./rkf45.png>]
-<a_2.png, id=107, 1027.84pt x 513.92pt>
+<a_2.png, id=110, 1027.84pt x 513.92pt>
 File: a_2.png Graphic file (type png)
  <use a_2.png>
-Package pdftex.def Info: a_2.png used on input line 195.
+Package pdftex.def Info: a_2.png used on input line 217.
 (pdftex.def)             Requested size: 487.8192pt x 243.91064pt.
  [6<./11.png><./a_2.png>]
-LaTeX Font Info:    Try loading font information for EU2+lmtt on input line 211.
+LaTeX Font Info:    Try loading font information for EU2+lmtt on input line 233.
 
 
 (/usr/local/texlive/2015/texmf-dist/tex/latex/euenc/eu2lmtt.fd
 File: eu2lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )(load luc: /usr/local/texlive/2015/texmf-var/luatex-cache/generic/fonts/otf/lmm
 ono10-regular.luc)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 227.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 249.
 [7]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 227.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 249.
  (./Final.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 227.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 227.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 249.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 249.
 Package rerunfilecheck Info: File `Final.out' has not changed.
 (rerunfilecheck)             Checksum: 7216B7A113B126340478EE5971DABE2E;888.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 227.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 249.
 )
 
 Here is how much of LuaTeX's memory you used:
  24146 strings out of 494693
  100000,552014 words of node,token memory allocated
- 442 words of node memory still in use:
+ 450 words of node memory still in use:
    7 hlist, 2 vlist, 2 rule, 2 glue, 2 kern, 7 attribute, 50 glue_spec, 7 attrib
 ute_list, 1 write nodes
-   avail lists: 2:9790,3:147,4:1628,5:420,6:3240,7:101,8:10,9:1080,10:289
+   avail lists: 2:11106,3:166,4:1227,5:280,6:3700,7:86,8:10,9:918,10:312
  27101 multiletter control sequences out of 65536+600000
  99 fonts using 6874863 bytes
- 54i,14n,62p,1234b,493s stack positions out of 5000i,500n,10000p,200000b,100000s
+ 54i,16n,62p,1234b,493s stack positions out of 5000i,500n,10000p,200000b,100000s
 </usr/local/texlive/2015/texmf-dist/fonts/opentype/public/lm/lmmono10-regular.ot
 f></usr/local/texlive/2015/texmf-dist/fonts/opentype/public/lm/lmroman10-italic.
 otf></usr/local/texlive/2015/texmf-dist/fonts/opentype/public/lm/lmroman8-regula
@@ -1279,16 +1280,17 @@ regular.otf></usr/local/texlive/2015/texmf-dist/fonts/opentype/public/lm/lmroman
 10-regular.otf></usr/local/texlive/2015/texmf-dist/fonts/opentype/public/lm/lmro
 man12-regular.otf></usr/local/texlive/2015/texmf-dist/fonts/opentype/public/lm/l
 mroman12-bold.otf><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfon
-ts/cm/cmmi10.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfont
-s/cm/cmmi5.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmmi7.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmr10.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/c
-mr7.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
-10.pfb>
-Output written on Final.pdf (7 pages, 1630760 bytes).
+ts/cm/cmex10.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmmi10.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmmi5.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmmi7.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmr10.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+r7.pfb><</usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy1
+0.pfb>
+Output written on Final.pdf (7 pages, 1642053 bytes).
 
-PDF statistics: 210 PDF objects out of 1000 (max. 8388607)
- 156 compressed objects within 2 object streams
+PDF statistics: 219 PDF objects out of 1000 (max. 8388607)
+ 164 compressed objects within 2 object streams
  31 named destinations out of 1000 (max. 131072)
  113 words of extra memory for PDF output out of 10000 (max. 10000000)
 
